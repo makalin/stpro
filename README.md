@@ -37,19 +37,64 @@ You will see the following output indicating the server is active:
 \[\*\] SOCKS5 Proxy listening on 127.0.0.1:1080  
 \[\*\] Configure your application to use Proxy: 127.0.0.1:1080
 
-## **Example: Bypassing Discord Restrictions on macOS**
+## **Example: Using stpro with Applications**
 
-Electron-based apps like Discord respect command-line proxy flags. To tunnel Discord traffic through stpro:
+stpro works with any application that supports SOCKS5 proxies. Here are some examples:
 
-1. Start stpro in one terminal window:  
-   cargo run \-- 1080
+### **Testing with curl:**
+```bash
+# Start stpro
+./target/release/stpro 1080
 
-2. Quit Discord completely (Cmd+Q).  
-3. Launch Discord from a **new** terminal window with the proxy flag:  
-   /Applications/Discord.app/Contents/MacOS/Discord \--proxy-server="socks5://127.0.0.1:1080"
+# In another terminal, test with curl
+curl --socks5 127.0.0.1:1080 https://www.google.com
+```
+
+### **Using with Discord (macOS):**
+
+**Note:** Some Discord versions may not respect SOCKS5 proxy settings via command-line flags or environment variables. If Discord doesn't connect through the proxy, you may need to:
+
+1. **Use system-level proxy settings** (macOS System Preferences → Network → Advanced → Proxies)
+2. **Use a proxy management tool** that can force applications to use SOCKS5
+3. **Use Discord's web version** in a browser configured to use the proxy
+
+**To try with Discord:**
+
+**Skip Discord's update check** (recommended to avoid update check failures):
+1. Edit Discord's settings file:
+   ```bash
+   nano ~/Library/Application\ Support/discord/settings.json
+   ```
+2. Add this line to the JSON object (make sure to add a comma after the last property):
+   ```json
+   "SKIP_HOST_UPDATE": true
+   ```
+3. Save and exit (Ctrl+O, Enter, Ctrl+X in nano)
+
+   Or use this command to add it automatically:
+   ```bash
+   python3 -c "import json; f=open('$HOME/Library/Application Support/discord/settings.json'); d=json.load(f); f.close(); d['SKIP_HOST_UPDATE']=True; f=open('$HOME/Library/Application Support/discord/settings.json','w'); json.dump(d,f,indent=2); f.close()"
+   ```
+
+**Launch Discord with proxy:**
+1. Start stpro:  
+   `./target/release/stpro 1080`
+
+2. Quit Discord completely (Cmd+Q)
+
+3. Launch Discord with proxy flag:  
+   `/Applications/Discord.app/Contents/MacOS/Discord --proxy-server="socks5://127.0.0.1:1080"`
+
+   Or try with environment variables:
+   ```bash
+   export ALL_PROXY=socks5://127.0.0.1:1080
+   /Applications/Discord.app/Contents/MacOS/Discord
+   ```
 
 4. Watch the stpro logs to verify traffic is being tunneled:  
-   \[\*\] Tunneling to: gateway.discord.gg:443
+   `[*] Tunneling to: gateway.discord.gg:443`
+
+**If Discord doesn't show connections in stpro logs**, Discord isn't using the proxy. The proxy itself is working correctly (test with curl to verify).
 
 ## **How It Works**
 
